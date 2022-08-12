@@ -28,7 +28,11 @@ static const gawk_api_t *api;
 static awk_ext_id_t *ext_id;
 static const char *ext_version = "AwkUnit: version 0.0.1";
 
-static awk_bool_t (*init_func)(void) = NULL;
+awk_bool_t init_my_extension(void){
+  fprintf(stderr, "(%s; do_debug=%s)\n", "awkunit being loaded", (do_debug ? "T" : "F"));
+  return awk_true;
+}
+static awk_bool_t (*init_func)(void) = init_my_extension;
 
 #define DO_ASSERTIO_MAX_ARGS 3
 #define DO_ASSERTIO_MIN_ARGS 3

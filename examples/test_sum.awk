@@ -1,5 +1,6 @@
 #!/usr/bin/awk -f
 @include "awkunit"
+#@include "~/git/awkunit/examples/sum.awk"
 @include "sum"
 
 function testSum() {
@@ -14,7 +15,9 @@ function testIO() {
 }
 
 BEGIN {
+  print "Test Starting ..." > "/dev/stderr"
     testSum()
     testIO()
+  print "... Test Finished" > "/dev/stderr"
     exit 0
 }
