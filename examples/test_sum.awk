@@ -10,7 +10,7 @@ function testSum() {
 }
 
 function testIO() {
-    assertIO("sum.awk", "sum.in", "sum.ok")
+    awkunit::assertIO("sum.awk", "sum.in", "sum.ok")
 }
 
 BEGIN {

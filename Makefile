@@ -1,5 +1,5 @@
 PREFIX=/usr
-LIBDIR=$(PREFIX)/lib/gawk
+LIBDIR=$(PREFIX)/lib/x86_64-linux-gnu/gawk
 AWKDIR=$(PREFIX)/share/awk
 
 CC=gcc

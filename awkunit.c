@@ -30,20 +30,22 @@ static const char *ext_version = "AwkUnit: version 0.0.1";
 
 static awk_bool_t (*init_func)(void) = NULL;
 
-static awk_value_t *do_assertIO(int nargs, awk_value_t *result)
+#define DO_ASSERTIO_MAX_ARGS 3
+#define DO_ASSERTIO_MIN_ARGS 3
+static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
 {
      awk_value_t scriptFile, inFile, outFile;
      int ret = -1;
      FILE *fpipe, *fo;
      char *command = NULL, pbuf[BUFFER_SIZE], obuf[BUFFER_SIZE];
-     
+
      assert(result != NULL);
-     
+
      if (do_lint && nargs != 3)
           lintwarn(ext_id,
-                   _("assertIO: called with incorrect number of arguments, "
+                   _("awkunit::assertIO: called with incorrect number of arguments, "
                      "expecting 3"));
-     
+
      if (get_argument(0, AWK_STRING, &scriptFile) &&
          get_argument(1, AWK_STRING, &inFile) &&
          get_argument(2, AWK_STRING, &outFile)) {
@@ -58,7 +60,7 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result)
      strcat(command, scriptFile.str_value.str);
      strcat(command, " < ");
      strcat(command, inFile.str_value.str);
-     
+
      if (!(fpipe = (FILE *)popen(command, "r"))) {
           perror("Fatal error: cannot open pipe");
           exit(-1);
@@ -67,7 +69,7 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result)
           perror("Fatal error: cannot open file");
           exit(-1);
      }
-     
+
      while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
           fgets(obuf, BUFFER_SIZE, fo);
           if (strcmp(pbuf, obuf) != 0) {
@@ -79,14 +81,14 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result)
                exit(-1);
           }
      }
-     
+
      pclose(fpipe);
      fclose(fo);
      return make_number(ret, result);
 }
 
 static awk_ext_func_t func_table[] = {
-     {"assertIO", do_assertIO, 3},
+     {"assertIO", do_assertIO, DO_ASSERTIO_MAX_ARGS, DO_ASSERTIO_MIN_ARGS},
 };
 
-dl_load_func(func_table, some_name, "name_space_in_quotes")
+dl_load_func(func_table, some_name, "awkunit")

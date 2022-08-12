@@ -3,7 +3,7 @@
 @include "asort"
 
 function testIO() {
-    assertIO("asort.awk", "/dev/stdin", "asort.ok")
+    awkunit::assertIO("asort.awk", "/dev/stdin", "asort.ok")
 }
 
 BEGIN {
