@@ -40,8 +40,8 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
 {
      awk_value_t scriptFile, inFile, outFile;
      int ret = -1;
-     FILE *fpipe, *fo;
-     char *command = NULL, pbuf[BUFFER_SIZE], obuf[BUFFER_SIZE];
+     FILE *fpipe, *fo, *fi;
+     char *command = NULL, pbuf[BUFFER_SIZE], obuf[BUFFER_SIZE], ibuf[BUFFER_SIZE];
 
      assert(result != NULL);
 
@@ -73,25 +73,37 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
           perror("Fatal error: cannot open file");
           exit(-1);
      }
+     if (!(fi = fopen(inFile.str_value.str, "r"))) {
+          perror("Fatal error: cannot input file");
+          exit(-1);
+     }
 
      int nr = 0;
      while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
           ++nr;
           fgets(obuf, BUFFER_SIZE, fo);
+          fgets(ibuf, BUFFER_SIZE, fi);
           if (strcmp(pbuf, obuf) != 0) {
+              int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; }
+              int oLen = strnlen(obuf, BUFFER_SIZE); if(oLen > 0) { obuf[oLen-1] = '\0'; }
+              int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; }
                fprintf(stderr, "Assertion failed: %s: output differs from file (%s)\n",
                        inFile.str_value.str, outFile.str_value.str);
-               fprintf(stderr, "NR=%d: output <%s> differs from expected <%s>\n",
-                       nr, pbuf, obuf);
+               fprintf(stderr, "pL=%d, oL=%d, iL=%d\n",
+                       pLen, oLen, iLen);
+               fprintf(stderr, "NR=%d: input <%s> made output \n<%s> which differs from expected \n<%s>\n",
+                       nr, ibuf, pbuf, obuf);
                sym_update("_assert_exit", make_number(-1, result));
                pclose(fpipe);
                fclose(fo);
+               fclose(fi);
                exit(-1);
           }
      }
 
      pclose(fpipe);
      fclose(fo);
+     fclose(fi);
      return make_number(ret, result);
 }
 

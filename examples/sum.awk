@@ -2,7 +2,7 @@
 
 BEGIN {
     FS = "[^0-9+-]+"
-    print "sum.awk BEGIN" > "/dev/stderr"
+    #print "sum.awk BEGIN" > "/dev/stderr"
 }
 
 function sum(input) {
@@ -14,6 +14,6 @@ function sum(input) {
 }
 
 {
-    print "sum.awk process '" $0 "'" > "/dev/stderr"
+    #print "sum.awk process '" $0 "'" > "/dev/stderr"
     print sum($0)
 }

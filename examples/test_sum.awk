@@ -27,15 +27,27 @@ function testIO_FromOneFile() {
 
 BEGIN {
   print "Test Starting ..." > "/dev/stderr"
-  print "(Input file being processed)" > "/dev/stderr"
+  #print "(Input file being processed)" > "/dev/stderr"
   _FS_Save = FS
   FS = "~=>"
+  _nr = 0
   while(getline == 1){
-    print "($1='" $1 "', $2='" $2 "'" > "/dev/stderr"
+    ++_nr
+    #print "($1='" $1 "', $2='" $2 "'" > "/dev/stderr"
     if(NF != 2){
       print "!!Expected just the one FS of '" FS "' but line=<" $0 ">" > "/dev/stderr"
+      exit 1
+    }
+    if(_nr == 1){ # create files 1st time round
+      print $1 > "tmpData.in"
+      print $2 > "tmpData.ok"
+    } else {
+      print $1 >> "tmpData.in"
+      print $2 >> "tmpData.ok"
     }
   }
+  close("tmpData.ok")
+  close("tmpData.in")
   FS = _FS_Save
   print "testSum_Orig ..." > "/dev/stderr"
     testSum_Orig()
@@ -43,6 +55,8 @@ BEGIN {
     testSum_WithHint()
   print "testIO_TwoFiles ..." > "/dev/stderr"
     testIO_TwoFiles()
+  print "testIO_FromOneFile ..." > "/dev/stderr"
+    testIO_FromOneFile()
   print "... Test Finished" > "/dev/stderr"
     exit 0
 }
