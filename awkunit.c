@@ -25,8 +25,8 @@
 int plugin_is_GPL_compatible;
 
 static const gawk_api_t *api;
-static awk_ext_id_t *ext_id;
-static const char *ext_version = "AwkUnit: version 0.0.1";
+static awk_ext_id_t ext_id;
+static const char *ext_version = "AwkUnit: version 0.5.1";
 
 awk_bool_t init_my_extension(void){
   fprintf(stderr, "(%s; do_debug=%s)\n", "awkunit being loaded", (do_debug ? "T" : "F"));
@@ -74,11 +74,15 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
           exit(-1);
      }
 
+     int nr = 0;
      while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
+          ++nr;
           fgets(obuf, BUFFER_SIZE, fo);
           if (strcmp(pbuf, obuf) != 0) {
                fprintf(stderr, "Assertion failed: %s: output differs from file (%s)\n",
                        inFile.str_value.str, outFile.str_value.str);
+               fprintf(stderr, "NR=%d: output <%s> differs from expected <%s>\n",
+                       nr, pbuf, obuf);
                sym_update("_assert_exit", make_number(-1, result));
                pclose(fpipe);
                fclose(fo);
