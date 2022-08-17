@@ -17,6 +17,20 @@ function testSum_WithHint() {
     data = "2 5 10" ; assertEquals(17, sum(data), data )
 }
 
+function testSum_expectEqualsWithHints() {
+    data = "1 2 3" ; expectEquals(666, sum(data), data " # Fail is expected!")
+    data = "1 2 3" ; expectEquals(999, sum(data), data " # Fail is expected!")
+    data = "1 2 3" ; expectEquals(333, sum(data), data " # Fail is expected!")
+}
+
+function testSum_expectNearWithHints() {
+    data = "1 2 3" ; expectNear(6, sum(data), 6, data )
+    data = "1 2 3" ; expectNear(5.5, sum(data), 0.49, data " # Fail is expected!")
+    data = "1 2 3" ; expectNear(5.5, sum(data), 0.51, data )
+    data = "1 2 3" ; expectNear(6.5, sum(data), 0.49, data " # Fail is expected!")
+    data = "1 2 3" ; expectNear(6.5, sum(data), 0.51, data )
+}
+
 function testIO_TwoFiles() {
     awkunit::assertIO("sum.awk", "sum.in", "sum.ok")
 }
@@ -35,7 +49,7 @@ BEGIN {
     ++_nr
     #print "($1='" $1 "', $2='" $2 "'" > "/dev/stderr"
     if(NF != 2){
-      print "!!Expected just the one FS of '" FS "' but line=<" $0 ">" > "/dev/stderr"
+      print "!!Expected exactly one FS of '" FS "' but line=<" $0 ">" > "/dev/stderr"
       exit 1
     }
     if(_nr == 1){ # create files 1st time round
@@ -53,6 +67,10 @@ BEGIN {
     testSum_Orig()
   print "testSum_WithHint ..." > "/dev/stderr"
     testSum_WithHint()
+  print "testSum_expectEqualsWithHints ..." > "/dev/stderr"
+    testSum_expectEqualsWithHints()
+  print "testSum_expectNearWithHints ..." > "/dev/stderr"
+    testSum_expectNearWithHints()
   print "testIO_TwoFiles ..." > "/dev/stderr"
     testIO_TwoFiles()
   print "testIO_FromOneFile ..." > "/dev/stderr"

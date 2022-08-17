@@ -24,7 +24,7 @@
 
 int plugin_is_GPL_compatible;
 
-static const gawk_api_t *api;
+static const gawk_api_t *api; // boilerplate code is wrong!
 static awk_ext_id_t ext_id;
 static const char *ext_version = "AwkUnit: version 0.5.1";
 
