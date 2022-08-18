@@ -3,6 +3,11 @@
 #@include "~/git/awkunit/examples/sum.awk"
 @include "sum" # note that its embedded BEGIN or END, if any, will run before BEGIN or END below
 
+BEGIN{
+  AWKUNIT_TERMINAL_ERR = "\033[0;41m"
+  AWKUNIT_TERMINAL_RESET = "\033[0m"
+}
+
 function testSum_Orig() {
     assertEquals(0, sum("0"))
     assertEquals(3, sum("1 2"))

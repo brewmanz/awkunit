@@ -4,7 +4,7 @@
 function assert(condition, string, _hint)
 {
     if (!condition) {
-        printf("Assertion failed: %s. Hint:%s.\n", string, _hint) > "/dev/stderr"
+        printf("%sAssertion failed: %s. Hint:%s.%s\n", AWKUNIT_TERMINAL_ERR, string, _hint, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
         _assert_exit = 1
         exit 1
     }
@@ -13,7 +13,7 @@ function assert(condition, string, _hint)
 function assertEquals(value1, value2, _hint)
 {
     if (value1 != value2) {
-        printf("Assertion failed: %s is not equal to %s. Hint:%s.\n", value1, value2, _hint) > "/dev/stderr"
+        printf("%sAssertion failed: %s is not equal to %s. Hint:%s.%s\n", AWKUNIT_TERMINAL_ERR, value1, value2, _hint, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
         _assert_exit = 1
         exit 1
     }
@@ -22,7 +22,7 @@ function assertEquals(value1, value2, _hint)
 function expectEquals(value1, value2, _hint)
 {
     if (value1 != value2) {
-        printf("Expectation failed: %s is not equal to %s. Hint:%s.\n", value1, value2, _hint) > "/dev/stderr"
+        printf("%sExpectation failed: %s is not equal to %s. Hint:%s.%s\n", AWKUNIT_TERMINAL_ERR, value1, value2, _hint, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
         _assert_exit = 1
         #exit 1
     }
@@ -33,7 +33,7 @@ function expectNear(value1, value2, diff, _hint                     , _delta)
     _delta = value1 - value2
     if(_delta < 0) { _delta = -_delta }
     if(_delta > diff){
-        printf("Expectation failed: %s is not near to %s ± %s. Hint:%s.\n", value1, value2, diff, _hint) > "/dev/stderr"
+        printf("%sExpectation failed: %s is not near to %s ± %s. Hint:%s.%s\n", AWKUNIT_TERMINAL_ERR, value1, value2, diff, _hint, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
         _assert_exit = 1
         #exit 1
     }

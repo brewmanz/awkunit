@@ -38,69 +38,90 @@ static awk_bool_t (*init_func)(void) = init_my_extension;
 #define DO_PROCESSIOTOARRAY_MIN_ARGS 3
 static awk_value_t *do_processIoToArray(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
 {
-     awk_value_t scriptFile, inFile, outArray;
-     int ret = -1;
-     FILE *fpipe, *fi;
-     char *command = NULL, pbuf[BUFFER_SIZE], ibuf[BUFFER_SIZE];
+    awk_value_t scriptFileName, inFileName, outArray;
+    int ret = -1;
+    FILE *fpipe;
+    char *command = NULL, pbuf[BUFFER_SIZE];
 
-     assert(result != NULL);
+    assert(result != NULL);
 
-     if (do_lint && nargs != 3)
-          lintwarn(ext_id,
-                   _("awkunit::processIoToArray: called with incorrect number of arguments, "
-                     "expecting 3"));
+    if (do_lint && nargs != 3)
+      lintwarn(ext_id,
+        _("awkunit::processIoToArray: called with incorrect number of arguments, "
+          "expecting 3"));
 
-     if (get_argument(0, AWK_STRING, &scriptFile) &&
-         get_argument(1, AWK_STRING, &inFile) &&
-         get_argument(2, AWK_ARRAY, &outArray)) {
-          ret = 0;
-     } else {
-          fprintf(stderr, "Error: incorrect number of arguments\n");
-          exit(-1);
-     }
+    if (get_argument(0, AWK_STRING, &scriptFileName)
+      && get_argument(1, AWK_STRING, &inFileName)
+      && get_argument(2, AWK_ARRAY, &outArray)) {
+      ret = 0;
+    } else {
+      fprintf(stderr, "Error: incorrect number of arguments\n");
+      exit(-1);
+    }
 
-     command = (char *)malloc(scriptFile.str_value.len +
-                              inFile.str_value.len + 12);
-     strcpy(command, "gawk -f ");
-     strcat(command, scriptFile.str_value.str);
-     strcat(command, " < ");
-     strcat(command, inFile.str_value.str);
+//printf("do_processIoToArray: outArray.val_type=%d(AWK_ARRAY=%d).\n", outArray.val_type, AWK_ARRAY);
 
-     if (!(fpipe = (FILE *)popen(command, "r"))) {
-          perror("Fatal error: cannot open pipe");
-          exit(-1);
-     }
-     if (!(fi = fopen(inFile.str_value.str, "r"))) {
-          perror("Fatal error: cannot input file");
-          exit(-1);
-     }
+    command = (char *)malloc(scriptFileName.str_value.len + inFileName.str_value.len + 12);
+    strcpy(command, "gawk ");
+    if(do_debug){
+    strcat(command, "-D ");
+    }
+    strcpy(command, "gawk -f ");
+    strcat(command, scriptFileName.str_value.str);
+    strcat(command, " < ");
+    strcat(command, inFileName.str_value.str);
+    if(do_debug){
+      printf("do_processIoToArray: command=`%s`\n", command);
+    }
 
-     int nr = 0;
-     while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
-          ++nr;
-          fgets(ibuf, BUFFER_SIZE, fi);
-          int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; } // trim trailing \n
+    if (!(fpipe = (FILE *)popen(command, "r"))) {
+      perror("Fatal error: cannot open pipe");
+      exit(-1);
+    }
 
-/*
-          if (strcmp(pbuf, obuf) != 0) {
-              int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; } // trim trailing \n
-              int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; } // trim trailing \n
-               fprintf(stderr, "Assertion failed: %s: output differs from file (%s)\n",
-                       inFile.str_value.str, outFile.str_value.str);
-               fprintf(stderr, "pL=%d, oL=%d, iL=%d\n",
-                       pLen, oLen, iLen);
-               fprintf(stderr, "NR=%d: input <%s> made output \n<%s> which differs from expected \n<%s>\n",
-                       nr, ibuf, pbuf, obuf);
-               sym_update("_assert_exit", make_number(-1, result));
-               pclose(fpipe);
-               fclose(fi);
-               exit(-1);
-          }
-*/
+    // prepare returning array
+    awk_array_t theArray;
+    theArray = create_array();
+    if(outArray.val_type != AWK_ARRAY){
+      // never called - so far. SO ALWAYS print
+      if (set_argument(2, theArray)) {
+        printf("do_processIoToArray: set_argument(2) to array OK\n");
+      } else {
+        printf("do_processIoToArray: set_argument(2) to array FAILED.\n");
+        //printf("do_processIoToArray: set_argument(2) to array FAILED. ERRNO=%s.\n", *errcode);
+        //exit(-1);
+        return make_number(ret, result);
+      }
+      outArray.val_type = AWK_ARRAY;
+      outArray.array_cookie = theArray;
+      //sym_update(outArray.)
+    }
+    theArray = outArray.array_cookie; // YOU MUST DO THIS
+    awk_value_t theKey, theValue;
+    //outArray.
+
+    // loop for each output line
+    int nr = 0;
+    while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
+      ++nr;
+      // get line
+      int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; --pLen; } // trim trailing \n
+      make_const_string(pbuf, pLen, &theValue);
+
+      // add to array, using line number 1..N as key
+      make_number(nr, &theKey);
+      if (set_array_element(theArray, & theKey, & theValue)) {
+        if(do_debug){
+          printf("do_processIoToArray: setting[%d] to <%s>\n", nr, pbuf);
+        }
+      } else {
+        printf("do_processIoToArray: set_array_element failed.\n");
+        //printf("do_processIoToArray: set_array_element failed. ERRNO=%s.\n", *errcode);
+        return make_number(ret, result);
+      }
      }
 
      pclose(fpipe);
-     fclose(fi);
      return make_number(ret, result);
 }
 
@@ -131,8 +152,12 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
 
      // prepare command
      command = (char *)malloc(scriptFile.str_value.len +
-                              inFile.str_value.len + 12);
-     strcpy(command, "gawk -f ");
+                              inFile.str_value.len + 15);
+     strcpy(command, "gawk ");
+     if(do_debug){
+      strcat(command, "-D ");
+     }
+     strcat(command, "-f ");
      strcat(command, scriptFile.str_value.str);
      strcat(command, " < ");
      strcat(command, inFile.str_value.str);
