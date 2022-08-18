@@ -1,7 +1,7 @@
 #!/usr/bin/awk -f
-@include "awkunit" # note that its embedded BEGIN, if any, will run before BEGIN below
+@include "awkunit" # note that its embedded BEGIN or END, if any, will run before BEGIN or END below
 #@include "~/git/awkunit/examples/sum.awk"
-@include "sum" # note that its embedded BEGIN, if any, will run before BEGIN below
+@include "sum" # note that its embedded BEGIN or END, if any, will run before BEGIN or END below
 
 function testSum_Orig() {
     assertEquals(0, sum("0"))
@@ -39,6 +39,14 @@ function testIO_FromOneFile() {
     awkunit::assertIO("sum.awk", "tmpData.in", "tmpData.ok")
 }
 
+function testIO_processIoToArray() {
+  delete arr
+  awkunit::processIoToArray("sum.awk", "tmpData.in", arr)
+  expectEquals(6, length(arr), "length(arr)")
+  expectEquals("3", arr[2], "arr[2]")
+  expectEquals("465", arr[6], "arr[6]")
+}
+
 BEGIN {
   print "Test Starting ..." > "/dev/stderr"
   #print "(Input file being processed)" > "/dev/stderr"
@@ -55,7 +63,7 @@ BEGIN {
     if(_nr == 1){ # create files 1st time round
       print $1 > "tmpData.in"
       print $2 > "tmpData.ok"
-    } else {
+    } else { # append after 1st
       print $1 >> "tmpData.in"
       print $2 >> "tmpData.ok"
     }
@@ -63,6 +71,7 @@ BEGIN {
   close("tmpData.ok")
   close("tmpData.in")
   FS = _FS_Save
+
   print "testSum_Orig ..." > "/dev/stderr"
     testSum_Orig()
   print "testSum_WithHint ..." > "/dev/stderr"
@@ -75,6 +84,10 @@ BEGIN {
     testIO_TwoFiles()
   print "testIO_FromOneFile ..." > "/dev/stderr"
     testIO_FromOneFile()
+  print "testIO_processIoToArray ..." > "/dev/stderr"
+    testIO_processIoToArray()
+
+
   print "... Test Finished" > "/dev/stderr"
     exit 0
 }

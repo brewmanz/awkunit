@@ -34,6 +34,76 @@ awk_bool_t init_my_extension(void){
 }
 static awk_bool_t (*init_func)(void) = init_my_extension;
 
+#define DO_PROCESSIOTOARRAY_MAX_ARGS 3
+#define DO_PROCESSIOTOARRAY_MIN_ARGS 3
+static awk_value_t *do_processIoToArray(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
+{
+     awk_value_t scriptFile, inFile, outArray;
+     int ret = -1;
+     FILE *fpipe, *fi;
+     char *command = NULL, pbuf[BUFFER_SIZE], ibuf[BUFFER_SIZE];
+
+     assert(result != NULL);
+
+     if (do_lint && nargs != 3)
+          lintwarn(ext_id,
+                   _("awkunit::processIoToArray: called with incorrect number of arguments, "
+                     "expecting 3"));
+
+     if (get_argument(0, AWK_STRING, &scriptFile) &&
+         get_argument(1, AWK_STRING, &inFile) &&
+         get_argument(2, AWK_ARRAY, &outArray)) {
+          ret = 0;
+     } else {
+          fprintf(stderr, "Error: incorrect number of arguments\n");
+          exit(-1);
+     }
+
+     command = (char *)malloc(scriptFile.str_value.len +
+                              inFile.str_value.len + 12);
+     strcpy(command, "gawk -f ");
+     strcat(command, scriptFile.str_value.str);
+     strcat(command, " < ");
+     strcat(command, inFile.str_value.str);
+
+     if (!(fpipe = (FILE *)popen(command, "r"))) {
+          perror("Fatal error: cannot open pipe");
+          exit(-1);
+     }
+     if (!(fi = fopen(inFile.str_value.str, "r"))) {
+          perror("Fatal error: cannot input file");
+          exit(-1);
+     }
+
+     int nr = 0;
+     while (fgets(pbuf, BUFFER_SIZE, fpipe)) {
+          ++nr;
+          fgets(ibuf, BUFFER_SIZE, fi);
+          int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; } // trim trailing \n
+
+/*
+          if (strcmp(pbuf, obuf) != 0) {
+              int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; } // trim trailing \n
+              int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; } // trim trailing \n
+               fprintf(stderr, "Assertion failed: %s: output differs from file (%s)\n",
+                       inFile.str_value.str, outFile.str_value.str);
+               fprintf(stderr, "pL=%d, oL=%d, iL=%d\n",
+                       pLen, oLen, iLen);
+               fprintf(stderr, "NR=%d: input <%s> made output \n<%s> which differs from expected \n<%s>\n",
+                       nr, ibuf, pbuf, obuf);
+               sym_update("_assert_exit", make_number(-1, result));
+               pclose(fpipe);
+               fclose(fi);
+               exit(-1);
+          }
+*/
+     }
+
+     pclose(fpipe);
+     fclose(fi);
+     return make_number(ret, result);
+}
+
 #define DO_ASSERTIO_MAX_ARGS 3
 #define DO_ASSERTIO_MIN_ARGS 3
 static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
@@ -55,9 +125,11 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
          get_argument(2, AWK_STRING, &outFile)) {
           ret = 0;
      } else {
-          fprintf(stderr, "Error: incorrect number of arguments\n");
+          fprintf(stderr, "Error: do_assertIO(): incorrect number or type of arguments; %d passed\n", nargs);
           exit(-1);
      }
+
+     // prepare command
      command = (char *)malloc(scriptFile.str_value.len +
                               inFile.str_value.len + 12);
      strcpy(command, "gawk -f ");
@@ -84,9 +156,9 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
           fgets(obuf, BUFFER_SIZE, fo);
           fgets(ibuf, BUFFER_SIZE, fi);
           if (strcmp(pbuf, obuf) != 0) {
-              int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; }
-              int oLen = strnlen(obuf, BUFFER_SIZE); if(oLen > 0) { obuf[oLen-1] = '\0'; }
-              int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; }
+              int pLen = strnlen(pbuf, BUFFER_SIZE); if(pLen > 0) { pbuf[pLen-1] = '\0'; } // trim trailing \n
+              int oLen = strnlen(obuf, BUFFER_SIZE); if(oLen > 0) { obuf[oLen-1] = '\0'; } // trim trailing \n
+              int iLen = strnlen(ibuf, BUFFER_SIZE); if(iLen > 0) { ibuf[iLen-1] = '\0'; } // trim trailing \n
                fprintf(stderr, "Assertion failed: %s: output differs from file (%s)\n",
                        inFile.str_value.str, outFile.str_value.str);
                fprintf(stderr, "pL=%d, oL=%d, iL=%d\n",
@@ -108,6 +180,7 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
 }
 
 static awk_ext_func_t func_table[] = {
+     {"processIoToArray", do_processIoToArray, DO_PROCESSIOTOARRAY_MAX_ARGS, DO_PROCESSIOTOARRAY_MIN_ARGS},
      {"assertIO", do_assertIO, DO_ASSERTIO_MAX_ARGS, DO_ASSERTIO_MIN_ARGS},
 };
 
