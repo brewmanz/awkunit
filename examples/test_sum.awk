@@ -4,8 +4,8 @@
 @include "sum" # note that its embedded BEGIN or END, if any, will run before BEGIN or END below
 
 BEGIN{
-  AWKUNIT_TERMINAL_ERR = "\033[0;41m"
-  AWKUNIT_TERMINAL_RESET = "\033[0m"
+  AWKUNIT_TERMINAL_ERR = "\033[1;41m" # white on red
+  AWKUNIT_TERMINAL_RESET = "\033[0m" # reset
 }
 
 function testSum_Orig() {

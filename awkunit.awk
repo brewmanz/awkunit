@@ -1,6 +1,10 @@
 #!/usr/bin/awk -f
 @load "awkunit"
 
+# inside a BEGIN block 'above' here, maybe set
+# AWKUNIT_TERMINAL_ERR = "\033[1;41m"
+# AWKUNIT_TERMINAL_RESET = "\033[0m"
+
 function assert(condition, string, _hint)
 {
     if (!condition) {

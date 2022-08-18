@@ -34,6 +34,13 @@ awk_bool_t init_my_extension(void){
 }
 static awk_bool_t (*init_func)(void) = init_my_extension;
 
+#define DO_GETDEBUGFLAG_MAX_ARGS 0
+#define DO_GETDEBUGFLAG_MIN_ARGS 0
+static awk_value_t *do_getDebugFlag(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
+{
+     return make_number(do_debug, result);
+}
+
 #define DO_PROCESSIOTOARRAY_MAX_ARGS 3
 #define DO_PROCESSIOTOARRAY_MIN_ARGS 3
 static awk_value_t *do_processIoToArray(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
@@ -55,7 +62,7 @@ static awk_value_t *do_processIoToArray(int nargs, awk_value_t *result, awk_ext_
       && get_argument(2, AWK_ARRAY, &outArray)) {
       ret = 0;
     } else {
-      fprintf(stderr, "Error: incorrect number of arguments\n");
+      fprintf(stderr, "Error: do_assertIO(): incorrect number or type of arguments; %d passed\n", nargs);
       exit(-1);
     }
 
@@ -205,6 +212,7 @@ static awk_value_t *do_assertIO(int nargs, awk_value_t *result, awk_ext_func_t *
 }
 
 static awk_ext_func_t func_table[] = {
+     {"getDebugFlag", do_getDebugFlag, DO_GETDEBUGFLAG_MAX_ARGS, DO_GETDEBUGFLAG_MIN_ARGS},
      {"processIoToArray", do_processIoToArray, DO_PROCESSIOTOARRAY_MAX_ARGS, DO_PROCESSIOTOARRAY_MIN_ARGS},
      {"assertIO", do_assertIO, DO_ASSERTIO_MAX_ARGS, DO_ASSERTIO_MIN_ARGS},
 };
