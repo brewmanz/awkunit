@@ -41,42 +41,53 @@ static awk_value_t *do_getDebugFlag(int nargs, awk_value_t *result, awk_ext_func
      return make_number(do_debug, result);
 }
 
-#define DO_PROCESSIOTOARRAY_MAX_ARGS 3
+#define DO_PROCESSIOTOARRAY_MAX_ARGS 4
 #define DO_PROCESSIOTOARRAY_MIN_ARGS 3
-static awk_value_t *do_processIoToArray(int nargs, awk_value_t *result, awk_ext_func_t *ext_func)
+static awk_value_t *do_processIoToArray(int nArgs, awk_value_t *result, awk_ext_func_t *ext_func)
 {
-    awk_value_t scriptFileName, inFileName, outArray;
+    awk_value_t scriptFileName, inFileName, outArray, runOptions;
     int ret = -1;
     FILE *fpipe;
     char *command = NULL, pbuf[BUFFER_SIZE];
 
     assert(result != NULL);
 
-    if (do_lint && nargs != 3)
+    if (do_lint && (nArgs < DO_PROCESSIOTOARRAY_MIN_ARGS || nArgs > DO_PROCESSIOTOARRAY_MAX_ARGS))
       lintwarn(ext_id,
-        _("awkunit::processIoToArray: called with incorrect number of arguments, "
-          "expecting 3"));
+        _("awkunit::processIoToArray: called with incorrect number of arguments, expecting 3 or 4"));
 
     if (get_argument(0, AWK_STRING, &scriptFileName)
       && get_argument(1, AWK_STRING, &inFileName)
       && get_argument(2, AWK_ARRAY, &outArray)) {
       ret = 0;
     } else {
-      fprintf(stderr, "Error: do_assertIO(): incorrect number or type of arguments; %d passed\n", nargs);
+      fprintf(stderr, "Error: do_processIoToArray(): incorrect number or type of arguments; %d passed\n", nArgs);
       exit(-1);
     }
 
+    if(nArgs > 3){
+      if (get_argument(3, AWK_STRING, &runOptions)) {
+        ret = 0;
+      } else {
+        fprintf(stderr, "Error: do_processIoToArray(): argument 4 (runOptions) not a string(%d) but %d\n", AWK_STRING, runOptions.val_type);
+        exit(-1);
+      }
+    } else {
+      make_const_string("", 0, &runOptions);
+    }
 //printf("do_processIoToArray: outArray.val_type=%d(AWK_ARRAY=%d).\n", outArray.val_type, AWK_ARRAY);
 
-    command = (char *)malloc(scriptFileName.str_value.len + inFileName.str_value.len + 12);
-    strcpy(command, "gawk ");
+    int cmdLen = scriptFileName.str_value.len + inFileName.str_value.len + runOptions.str_value.len + 16;
+    command = (char *)malloc(cmdLen);
+    strncpy(command, "gawk ", cmdLen); // 5 + 1
     if(do_debug){
-    strcat(command, "-D ");
+      strncat(command, "-D ", cmdLen); // +3
     }
-    strcpy(command, "gawk -f ");
-    strcat(command, scriptFileName.str_value.str);
-    strcat(command, " < ");
-    strcat(command, inFileName.str_value.str);
+    strncat(command, runOptions.str_value.str, cmdLen);
+    strncat(command, " -f ", cmdLen); // +4
+    strncat(command, scriptFileName.str_value.str, cmdLen);
+    strncat(command, " < ", cmdLen); // +3
+    strncat(command, inFileName.str_value.str, cmdLen);
     if(do_debug){
       printf("do_processIoToArray: command=`%s`\n", command);
     }
