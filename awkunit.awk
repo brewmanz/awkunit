@@ -4,6 +4,30 @@
 # inside a BEGIN block 'above' here, maybe set
 # AWKUNIT_TERMINAL_ERR = "\033[1;41m"
 # AWKUNIT_TERMINAL_RESET = "\033[0m"
+
+#  # Find test names like T1234....
+#  print FONT_YELLOW "GetDumpOfArray(, PROCINFO[\"identifiers\"] ..." FONT_RESET > "/dev/stderr"
+#  PROCINFO["sorted_in"] = "@ind_str_asc" # options are @unsorted, @ind_str_asc, @ind_num_asc, @val_type_asc, @val_str_asc, @val_num_asc; also ..._desc
+#  _pattern = "\\[T[0-9]{4}[a-zA-Z0-9_]*" # [T1234....
+#  delete _arr
+#  GetDumpOfArray(_arr, PROCINFO["identifiers"])
+#  print FONT_YELLOW "GetDumpOfArray(, PROCINFO[\"identifiers\"] filtered for Tests ..." FONT_RESET > "/dev/stderr"
+#  delete _ListOfTests
+#  for(_key in _arr){
+#    if(_arr[_key] == "user" && _key ~ _pattern){
+#      match(_key, _pattern)
+#      myMatch = substr( _key, RSTART+1, RLENGTH-1 )
+#      if(TPR_DEBUG) { print "[" _key "]=" _arr[_key] " > " RSTART, ", " RLENGTH, ", ", myMatch }
+#      print " will run " myMatch
+#      _ListOfTests[myMatch] = myMatch
+#    }
+#  }
+#  # Do tests
+#  for(_keyTest in _ListOfTests){
+#    print FONT_YELLOW _keyTest FONT_RESET > "/dev/stderr"
+#    @_keyTest()
+#  }
+
 BEGIN{
   _assert_exit = 0
 }
