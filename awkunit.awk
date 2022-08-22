@@ -71,7 +71,7 @@ function expectNotNear(value1, value2, diff, _hint                     , _delta)
 
 END {
     if (_assert_exit){
-        printf("%sawkuit: Unit Test failure: assert/expect failures=%d%s\n", AWKUNIT_TERMINAL_ERR, _assert_exit, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
+        printf("%sawkunit: Unit Test failure: assert/expect failures=%d%s\n", AWKUNIT_TERMINAL_ERR, _assert_exit, AWKUNIT_TERMINAL_RESET) > "/dev/stderr"
         exit 1
     }
 }
